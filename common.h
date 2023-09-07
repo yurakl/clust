@@ -8,7 +8,7 @@ typedef struct ClustQueue {
 	char	inputFile[FNLEN];
 	char	logFile[FNLEN];
 	int	nproc;
-}
+};
 
 char HomeFolderName[]	= "~/.clust";
 char HostFileName[]	= "/etc/hosts";

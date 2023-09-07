@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "common.h"
 
 int main(int argc, char *argv[]) 
@@ -66,6 +68,15 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+	
+	if (access(HomeFolderName, F_OK) == -1) {
+		if (mkdir(HomeFolderName, 0777) == 0) {
+			printf("%s is created\n", HomeFolderName);
+		} else {
+		perror("Error creating %s", HomeFolderName);
+		return 1;
+		}
+	} 
 	
 	return 0;
 }
