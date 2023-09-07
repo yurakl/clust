@@ -1,12 +1,16 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+
 #include "common.h"
 
 int main(int argc, char *argv[]) 
 {
-	FILE *file;
+	int file_descriptor;
+
 	ClustQueue task;
 	getcwd(task.workingFolder, PATHLEN);
 	
@@ -31,7 +35,7 @@ int main(int argc, char *argv[])
 	
 	for (int i = 1; i < argc; i++) 
 	{
-		if (strcmp(argv[i], "-n") || strcmp(argv[i], "-np")) {
+		if (strcmp(argv[i], "-n") == 0) {
 			if (i + 1 < argc) {
 				task.nproc = atoi(argv[i + 1]);
 				i++;
@@ -39,7 +43,7 @@ int main(int argc, char *argv[])
 				printf("Error: -n option requires a value.\n");
 				return 1;
 			}
-		} else if (strcmp(argv[i], "-i")) {
+		} else if (strcmp(argv[i], "-i") == 0) {
 			if (i + 1 < argc) {
 				memset(task.inputFile, 0, FNLEN);
 				strcpy(task.inputFile, argv[i + 1]);
@@ -48,7 +52,7 @@ int main(int argc, char *argv[])
 				printf("Error: -i option requires a value.\n");
 				return 1;
 			}
-		} else if (strcmp(argv[i], "-l")) {
+		} else if (strcmp(argv[i], "-l") == 0) {
 			if (i + 1 < argc) {
 				memset(task.logFile, 0, FNLEN);
 				strcpy(task.logFile, argv[i + 1]);
@@ -57,7 +61,7 @@ int main(int argc, char *argv[])
 				printf("Error: -l option requires a value.\n");
 				return 1;
 			}
-		} else if (strcmp(argv[i], "-o")) {
+		} else if (strcmp(argv[i], "-o") == 0) {
 			if (i + 1 < argc) {
 				memset(task.owner, 0, LEN);
 				strcpy(task.owner, argv[i + 1]);
@@ -73,10 +77,34 @@ int main(int argc, char *argv[])
 		if (mkdir(HomeFolderName, 0777) == 0) {
 			printf("%s is created\n", HomeFolderName);
 		} else {
-		perror("Error creating %s", HomeFolderName);
+			perror(HomeFolderName);
 		return 1;
 		}
 	} 
 	
+	snprintf(QueueFile, PATHLEN, "%s/%s", HomeFolderName, "Queue");
+	
+	file_descriptor = open(QueueFile, O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
+	
+	if (file_descriptor == -1) {
+		perror(QueueFile);
+		return 1;
+	}
+	
+	task.pid = 0;
+	
+	printf("pid: %u\tnproc: %d\nInput: %s\tLog: %s\nOwner: %s\tFolder %s\n", task.pid, task.nproc, task.inputFile, task.logFile, task.owner, task.workingFolder);
+	
+	char QueueWrite[10 * LEN];
+	
+	snprintf(QueueWrite, 10 * LEN - 1, QFORMAT(task));
+	ssize_t bytes_written = write(file_descriptor, QueueWrite, strlen(QueueWrite));
+	
+	if (bytes_written == -1) {
+		perror(QueueFile);
+	}
+	
+	close(file_descriptor);
+	  
 	return 0;
 }
